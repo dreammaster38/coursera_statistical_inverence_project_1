@@ -1,0 +1,121 @@
+---
+title: "Coursera's Statistical Inference - Simulation"
+author: "by Thomas Guenther"
+date: "September 2014"
+output: pdf_document
+---
+
+For this assignment our goal is to simulate the exponential distribution with R. This type of distribution can be simulated in R via the following formula: `rexp(n, lambda)`. The mean and the standard deviation are also given with $\frac{1}{\lambda}$. For this exercise we have to set $\lambda$=0.2 and we have to compute at least 1000 distributions of averages of 40 exponentials. 
+
+```{r echo=FALSE}
+library(ggplot2)
+
+#opts_chunk$set(fig.path='figures/')
+
+if(!exists("multiplot", mode = "function")) {
+  source("functions.R")
+}
+
+simCount <- 1000
+n <- 40
+lambda <- 0.2
+meanExp <- 1 / lambda
+sdExp <- 1 / lambda
+
+set.seed(1972)
+simulatedVals <- replicate( simCount, mean(rexp(n, lambda)))
+simX <- replicate( simCount, sd(rexp(n, lambda)))
+````
+### 1. Theoretical and computed Center of distribution
+
+The theoretical center of distribution is given by $\frac{1}{\lambda}$. So it is $\frac{1}{0.2}=5$. On the other hand we have 1000 simulated values of our simulated distribution which is:
+
+```{r echo=FALSE}
+mean(simulatedVals)
+```
+
+As we can see the mean of our simulated distribution is close to the theoretical mean.
+
+### 2. Theoretical and computed variance
+
+Let us first take a look at the theoretical variance. This will be calculated as follows:
+$$ Var(\bar{X}) = \frac{\frac{1}{\lambda^2}}{n} = \frac{1}{\lambda^2 \cdot n} = \frac{1}{0.2^2 \cdot 40} = 0.625 $$
+Now we compare this theoretical variance to the variance of our sample disribution. It's value is:
+```{r echo=FALSE}
+var(simulatedVals)
+```
+
+As for the mean it's values are close each other too.
+
+### 3. Is our sample approximately normal?
+
+For our purposes, the CLT states that the distribution of averages of iid variables (properly normalized) becomes that of a standard normal as the sample size increases.
+
+If we have samples with a high enough sample size n (in literature they say more than 30) and we create the average of them with a high count of repeats, then the distribution of this values is approximately normal also if the population distribution isn't a normal one. This is stated by the Central Limit Theorem.
+The following plot shows this behavior:
+
+```{r echo=FALSE, fig.width=6, fig.height=5}
+sMean <- data.frame(Means="Sample mean", vals=mean(simulatedVals))
+tMean <- data.frame(Means="Theoretical mean", vals=meanExp)
+means <- rbind(sMean, tMean)
+means$Means = factor(means$Means)
+
+df <- data.frame(simVal = simulatedVals)
+# generate ~1000 sample values to create a normal distribution of it in the plot
+xVals <- data.frame(simVal = seq(2, 8, 0.006))
+
+distribution_Desc = "In addition to the histogram\n i made a density plot and\n added a normal plot (in orange)\n it's center of distribution\n is 1/lambda = 5"
+# Histogram overlaid with kernel density curve
+simuPlot <- ggplot(df, aes(x=simVal)) + 
+    geom_histogram(aes(y=..density..), # Histogram with density
+                   binwidth=.2,
+                   colour="black", fill="#3333FF") +
+    geom_density(alpha=.5,
+                 fill="#CCFF00",
+                 color="black") + # Overlay with transparent density plot
+    stat_function(data=xVals,
+                  fun=dnorm,
+                  size=1.2 ,
+                  color="#FF6600",
+                  args=list(mean = 1/lambda,  sd = 1/(sqrt(n)*lambda))) +
+    geom_vline(data=means,
+               aes(xintercept=vals,
+                   colour=Means),
+               linetype="longdash",
+               size=1.1,
+               show_guide=TRUE) +
+    scale_color_manual(values=c("red", "#00FF99")) +
+    annotate("text",
+             x = 7.1,
+             y = 0.45,
+             cex = 3,
+             label = distribution_Desc,
+             parse = FALSE) +
+    xlab("Sample means of simulated exponential distribution") +
+    ggtitle("Histogram and density plot of a simulated exponential distribution\nwith sample size of 40 and a simulation count of 1000") +
+    theme(legend.position="bottom", plot.title = element_text(color="blue", size=11, vjust=1.0))
+  #guides(color=guide_legend(override.aes=list(shape=c(NA,NA,NA,NA,16))))
+# Plotting simulation and quantiles
+print(simuPlot)
+#qqnorm(df$simVal)
+#qqline(df$simVal)
+```
+
+As you can see in the histogram we get an approximately normal distribution out of our 1000 simulated averages with sample size 40. I added a density plot as well so the result gets more clear.
+
+### 4. Coverage of the confidence intervall
+
+A confidence interval (CI) measures how reliable an estimate is and is an intervall estimation. The confidence level of 95% is one of the most frequently used confidence intervalls in practice, so will test against it.
+That means we will test how many of the population parameters of 1000 simulated exponantial distribution samples with size 40 falls into the CI-bounds of 95%. We use this given formula for calculation:
+$$ \left[\bar{X} - 1.96\cdot\frac{s}{\sqrt{n}}, \bar{X} + 1.96\cdot\frac{s}{\sqrt{n}}\right] \hat{=}  mean(sample) \pm 1.96 \cdot \frac{Sample Standard Deviation}{\sqrt(n)} $$
+
+```{r echo=FALSE}
+coverage <- sapply(1:simCount, function(dummy) {
+    sampleExpDist <- rexp(n, lambda)
+    lowerLimit <- mean(sampleExpDist) - (qnorm(.975) * sd(sampleExpDist)/sqrt(n))
+    upperLimit <- mean(sampleExpDist) + (qnorm(.975) * sd(sampleExpDist)/sqrt(n))
+    mean(lowerLimit < 1/lambda & upperLimit > 1/lambda)
+}); mean(coverage)
+```
+
+As can been seen $\approx 92\%$ of our sample means estimate the population mean.
