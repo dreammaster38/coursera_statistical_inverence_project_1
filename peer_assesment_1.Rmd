@@ -5,7 +5,10 @@ date: "September 2014"
 output: pdf_document
 ---
 
+## Introduction
+
 For this assignment our goal is to simulate the exponential distribution with R. This type of distribution can be simulated in R via the following formula: `rexp(n, lambda)`. The mean and the standard deviation are also given with $\frac{1}{\lambda}$. For this exercise we have to set $\lambda$=0.2 and we have to compute at least 1000 distributions of averages of 40 exponentials. 
+Due to the page limit i've setup a GitHub repository with all my files: [https://github.com/dreammaster38/coursera_statistical_inverence_project_1](https://github.com/dreammaster38/coursera_statistical_inverence_project_1)
 
 ```{r echo=FALSE}
 library(ggplot2)
@@ -94,7 +97,6 @@ simuPlot <- ggplot(df, aes(x=simVal)) +
     xlab("Sample means of simulated exponential distribution") +
     ggtitle("Histogram and density plot of a simulated exponential distribution\nwith sample size of 40 and a simulation count of 1000") +
     theme(legend.position="bottom", plot.title = element_text(color="blue", size=11, vjust=1.0))
-  #guides(color=guide_legend(override.aes=list(shape=c(NA,NA,NA,NA,16))))
 # Plotting simulation and quantiles
 print(simuPlot)
 #qqnorm(df$simVal)
